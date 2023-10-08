@@ -9,7 +9,7 @@
               quarto check                                                                                                 &&
               quarto render                                                                                                &&
               mv _book public                                                                                              &&
-              apachectl start                                                                                              &&              
+              apachectl start                                                                                            
 ports:
   - port: 8080  
     visibility: public
