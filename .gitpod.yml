@@ -12,6 +12,8 @@ tasks:
               ( echo ""; echo 'export PATH=$PATH:~/bin\n' ; echo "" ) >> ~/.profile                                        &&
               source ~/.profile                                                                                            &&
               quarto check                                                                                                 &&
+              quarto install tinytex                                                                                       &&
               quarto render                                                                                                &&
               mv _book public                                                                                              &&
               apachectl start                                                                                            
+                                                                                  
