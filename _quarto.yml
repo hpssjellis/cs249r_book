@@ -104,22 +104,8 @@ crossref:
   appendix-title: "Appendix"
   appendix-delim: ":"
 
-format:
-  html:
-    theme: 
-      - cosmo
-      - style.scss
-    mainfont: Nunito
-    code-link: true
-    link-external-icon: true
-    link-external-newwindow: true
-    callout-appearance: simple
-    anchor-sections: true
-    smooth-scroll: false
-    toc: true
-    citations-hover: false
-    fig-width: 8
-    fig-height: 6
+format: pdf
+output-file: output/report.pdf
 
 editor:
   render-on-save: true
