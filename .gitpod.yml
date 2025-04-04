@@ -4,6 +4,9 @@ ports:
   onOpen: open-preview
 
 tasks:
-- init:       quarto render                                                                                                &&
+- init:       ( echo ""; echo 'export PATH=$PATH:~/bin\n' ; echo "" ) >> ~/.profile                                        &&       
+              source ~/.profile                                                                                            &&
+              quarto check                                                                                                 &&
+              quarto render                                                                                                &&
               mv _book public                                                                                              &&
               apachectl start  
