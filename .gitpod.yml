@@ -5,18 +5,3 @@ ports:
 - port: 8080  
   visibility: public
   onOpen: open-preview
-
-tasks:
-- init:      wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.13/quarto-1.7.13-linux-amd64.tar.gz      &&
-              mkdir ~/opt                                                                                                  &&
-              tar -C ~/opt -xvzf quarto-1.7.13-linux-amd64.tar.gz                                                          &&
-              mkdir ~/bin                                                                                                  &&
-              ln -s ~/opt/quarto-1.7.13/bin/quarto ~/bin/quarto                                                            &&
-              ( echo ""; echo 'export PATH=$PATH:~/bin\n' ; echo "" ) >> ~/.profile                                        &&
-              source ~/.profile                                                                                            &&
-              quarto check                                                                                                 &&
-              quarto install tinytex                                                                                       &&
-              quarto install chromium                                                                                      &&
-              quarto render                                                                                                &&
-              mv _book public                                                                                              &&
-              apachectl start       
