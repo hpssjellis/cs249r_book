@@ -1,0 +1,22 @@
+FROM gitpod/workspace-full
+
+# Install system dependencies
+RUN sudo apt-get update && sudo apt-get install -y \
+    r-base \
+    texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra \
+    texlive-pictures texlive-luatex \
+    inkscape \
+    ghostscript \
+    python3 python3-pip
+
+# Install Quarto
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.13/quarto-1.7.13-linux-amd64.deb && \
+    sudo dpkg -i quarto-1.7.13-linux-amd64.deb && \
+    quarto check && \
+    quarto install tinytex
+
+# Install R Packages
+RUN R -e "install.packages('remotes'); source('install_packages.R')"
+
+# Set up the workspace directory
+WORKDIR /workspace
