@@ -1,3 +1,5 @@
+image: Dockerfile
+
 ports:
   - port: 8080
     visibility: public
