@@ -5,3 +5,11 @@ ports:
 - port: 8080  
   visibility: public
   onOpen: open-preview
+
+tasks:
+  - init: quarto check             &&
+      quarto install tinytex       &&
+      quarto install chromium      &&
+      quarto render --to html      &&
+      mv _book public              &&
+      apachectl start 
