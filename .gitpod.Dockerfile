@@ -1,55 +1,65 @@
 FROM gitpod/workspace-full:latest
 
-# Use root for installation
 USER root
 
-# Environment vars to fix Quarto + Deno cache issues
-ENV QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache
-ENV DENO_DIR=/tmp/.deno-cache
-
-# Install build tools + Quarto + R + Python + LaTeX + Inkscape + Ghostscript
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# Install build tools and Quarto dependencies
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential \
-    wget \
+    gcc-arm-none-eabi \
+    make \
     r-base \
     python3 \
     python3-pip \
     ghostscript \
-    software-properties-common \
     texlive-latex-recommended \
     texlive-fonts-recommended \
     texlive-latex-extra \
     texlive-pictures \
     texlive-luatex \
-    libfontconfig1 \
-    libfreetype6 \
-    && add-apt-repository ppa:inkscape.dev/stable -y \
-    && apt-get update \
-    && apt-get install -y inkscape
+    wget \
+    software-properties-common \
+    gpg \
+    ca-certificates \
+    libgl1 \
+    libxrender1 \
+    libsm6 \
+  && wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.13/quarto-1.7.13-linux-amd64.deb \
+  && dpkg -i quarto-1.7.13-linux-amd64.deb \
+  && rm quarto-1.7.13-linux-amd64.deb \
+  && bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" \
+  && install-packages \
+    clang \
+    clangd \
+    clang-format \
+    clang-tidy \
+    gdb \
+    lld
 
-# Install Quarto CLI
-RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.550/quarto-1.4.550-linux-amd64.deb \
-    && dpkg -i quarto-1.4.550-linux-amd64.deb \
-    && rm quarto-1.4.550-linux-amd64.deb
+# Install Inkscape from PPA
+RUN add-apt-repository ppa:inkscape.dev/stable -y \
+  && apt-get update \
+  && apt-get install -y inkscape
 
-# Install TinyTeX via Quarto
-RUN quarto install tinytex
+# Fix Quarto + Deno cache permissions
+RUN mkdir -p /home/gitpod/.cache/quarto/sass \
+  && mkdir -p /home/gitpod/.cache/deno \
+  && chown -R gitpod:gitpod /home/gitpod/.cache
 
-# Create writable cache dirs and set permissions
-RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache \
-    && chown -R gitpod:gitpod /tmp/.quarto-cache /tmp/.deno-cache
-
-# Clean up
-RUN apt-get clean && rm -rf /var/cache/apt/* /var/lib/apt/lists/* /tmp/*
-
-# Switch back to gitpod user
-USER gitpod
-
-# Create logs and confirm install
+# Create logs for debug
 RUN mkdir -p /home/gitpod/logs \
-    && touch /home/gitpod/logs/myDockerlog.txt \
-    && echo "✅ Quarto dev environment installed" >> /home/gitpod/logs/myDockerlog.txt
+  && touch /home/gitpod/logs/myDockerlog.txt \
+  && echo "✅ Quarto dev environment installed" >> /home/gitpod/logs/myDockerlog.txt
 
-# Add to .bashrc so it's always active
+# Optional: add env vars to reduce cache issues during runtime
 RUN echo 'export QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache' >> /home/gitpod/.bashrc \
-    && echo 'export DENO_DIR=/tmp/.deno-cache' >> /home/gitpod/.bashrc
+  && echo 'export DENO_DIR=/tmp/.deno-cache' >> /home/gitpod/.bashrc
+
+# Final cleanup
+RUN apt-get clean \
+  && rm -rf /var/cache/apt/* \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /tmp/*
+
+# Give back control
+USER gitpod
