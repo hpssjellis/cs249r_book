@@ -14,6 +14,6 @@ tasks:
               quarto check                                                                                                 &&
               quarto install tinytex                                                                                       &&
               quarto install chromium                                                                                      &&
-              quarto render                                                                                                &&
+              quarto render --to html                                                                                      &&
               mv _book public                                                                                              &&
               apachectl start        
