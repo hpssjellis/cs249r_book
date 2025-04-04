@@ -8,7 +8,6 @@ ports:
 
 tasks:
   - init: quarto check             &&
-      quarto install tinytex       &&
       quarto install chromium      &&
       quarto render --to html      &&
       mv _book public              &&
