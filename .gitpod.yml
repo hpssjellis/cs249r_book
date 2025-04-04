@@ -1,7 +1,5 @@
 version: 1.0
 
-image: ./Dockerfile  # Reference the custom Dockerfile
-
 ports:
   - port: 8080
     visibility: public
