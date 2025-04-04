@@ -19,4 +19,3 @@ tasks:
       apachectl start
     command: quarto serve --port 8080
 
-image: workspace-custom
