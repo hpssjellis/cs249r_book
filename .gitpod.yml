@@ -1,19 +1,19 @@
 version: 1.0
 
+image: Dockerfile  # Reference the correct Dockerfile
+
 ports:
-  - port: 8080
+  - name: web
+    port: 8080
     visibility: public
     onOpen: open-preview
 
 tasks:
   - name: Setup Environment
     init: |
-      echo 'export PATH=$HOME/.TinyTeX/bin/x86_64-linux:$PATH' >> ~/.bashrc &&
-      source ~/.bashrc &&
       quarto check &&
       quarto install tinytex &&
       quarto render &&
       mv _book public &&
       apachectl start
     command: quarto serve --port 8080
-
