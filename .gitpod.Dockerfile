@@ -9,15 +9,12 @@ RUN apt-get update \
     gcc-arm-none-eabi \
     make \
     r-base \
-    python3 \
-    python3-pip \
     ghostscript \
     texlive-latex-recommended \
     texlive-fonts-recommended \
     texlive-latex-extra \
     texlive-pictures \
     texlive-luatex \
-    wget \
     software-properties-common \
     gpg \
     ca-certificates \
