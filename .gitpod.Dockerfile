@@ -28,7 +28,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 
 # Install Quarto CLI (Latest Version)
-RUN wget https://github.com/quarto-dev/quarto-cli/releases/latest/download/quarto-linux-amd64.deb && \
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.21/quarto-1.7.21-linux-arm64.deb && \
     dpkg -i quarto-linux-amd64.deb && \
     rm quarto-linux-amd64.deb
 
