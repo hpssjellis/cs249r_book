@@ -22,6 +22,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     texlive-latex-extra \
     texlive-pictures \
     texlive-luatex \
+    r-base \
     inkscape
 
 # Install R and add CRAN repository
@@ -41,7 +42,9 @@ RUN quarto install tinytex
 RUN quarto install chromium
 
 # Install required R packages in one step to reduce layers
-RUN Rscript -e 'install.packages(c("remotes", "devtools", "attempt", "dockerfiler"), repos="https://cloud.r-project.org")'
+# RUN Rscript -e 'install.packages(c("remotes", "devtools", "attempt", "dockerfiler"), repos="https://cloud.r-project.org")'
+# RUN install.packages("remotes")
+# RUN source("install_packages.R")
 
 # Create cache directories with correct permissions
 RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache \
