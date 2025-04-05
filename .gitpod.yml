@@ -15,8 +15,7 @@ tasks:
       gs --version                 &&
       quarto install chromium      &&     
       quarto render --to html      &&
-      mv _book public              &&
-      apachectl start 
+      mv _book public            
 
 
-command:   echo "Starting this docker"       
+command:   apachectl start     
