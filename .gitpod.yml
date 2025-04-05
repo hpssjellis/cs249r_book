@@ -8,8 +8,12 @@ ports:
 
 tasks:
   - init: quarto check             &&
+      quarto --version             &&
+      r --version                  &&
+      tex --version                &&
+      inkscape --version           &&
+      gs --version                 &&
       quarto install chromium      &&     
-      quarto install tinytex       &&
       quarto render --to html      &&
       mv _book public              &&
       apachectl start 
