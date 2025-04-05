@@ -25,12 +25,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     r-base \
     inkscape
 
-# Install R and add CRAN repository
-RUN wget -qO- https://cloud.r-project.org/bin/linux/debian/pubkey.gpg | \
-    gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/debian/ bookworm-cran40/" > /etc/apt/sources.list.d/cran.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends r-base
+
 
 # Install Quarto CLI (Latest Version)
 RUN wget https://github.com/quarto-dev/quarto-cli/releases/latest/download/quarto-linux-amd64.deb && \
