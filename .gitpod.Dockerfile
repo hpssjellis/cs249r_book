@@ -5,16 +5,19 @@ USER root
 # Install R
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    r-base
+    r-base \
+    ghostscript \
+    texlive-latex-recommended \
+    texlive-fonts-recommended \
+    texlive-latex-extra \
+    texlive-pictures \
+    texlive-luatex \
 
 # Install Quarto CLI
 RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.13/quarto-1.7.13-linux-amd64.deb && \
     dpkg -i quarto-1.7.13-linux-amd64.deb && \
     rm quarto-1.7.13-linux-amd64.deb
 
-# Install TinyTeX (lightweight LaTeX)
-RUN quarto install tinytex && \
-    echo 'export PATH=$HOME/.TinyTeX/bin/x86_64-linux:$PATH' >> /etc/bash.bashrc
 
 # Install Inkscape and Ghostscript
 RUN add-apt-repository ppa:inkscape.dev/stable -y && \
