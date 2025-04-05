@@ -9,9 +9,6 @@ ENV DENO_DIR=/tmp/.deno-cache
 
 # Install system build tools and dependencies
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    build-essential \
-    wget \
-    curl \
     dirmngr \
     gnupg \
     ca-certificates \
@@ -44,13 +41,21 @@ RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.550/qua
 
 # Install TinyTeX via Quarto (for lean LaTeX)
 RUN quarto install tinytex
+RUN quarto install chromium 
 
 # Install core R packages for Quarto
-RUN Rscript -e "install.packages(c('remotes', 'knitr', 'rmarkdown'), repos='https://cloud.r-project.org')"
+# RUN Rscript -e "install.packages(c('remotes', 'knitr', 'rmarkdown'), repos='https://cloud.r-project.org')"
 
 # Copy and install project-specific R packages
-COPY install_packages.R /home/gitpod/install_packages.R
-RUN Rscript /home/gitpod/install_packages.R
+# COPY install_packages.R /home/gitpod/install_packages.R
+# RUN Rscript /home/gitpod/install_packages.R
+
+RUN R -e 'install.packages("remotes")'
+RUN R -e 'remotes::install_github("r-lib/remotes", ref = "6c8fdaa")'
+RUN R -e 'remotes::install_cran("attempt")'
+RUN R -e 'remotes::install_cran("remotes")'
+RUN R -e 'remotes::install_cran("dockerfiler")'
+RUN R -e 'remotes::install_cran("devtools")'
 
 # Create writable cache dirs and set permissions
 RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache && \
