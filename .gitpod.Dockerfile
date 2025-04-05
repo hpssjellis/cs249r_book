@@ -1,3 +1,4 @@
+# Base image
 FROM gitpod/workspace-full:latest
 
 # Use root for installation
@@ -7,7 +8,7 @@ USER root
 ENV QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache
 ENV DENO_DIR=/tmp/.deno-cache
 
-# Install system build tools and dependencies
+# Install system dependencies
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     dirmngr \
     gnupg \
@@ -15,18 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     software-properties-common \
     libfontconfig1 \
     libfreetype6 \
-    ghostscript
-
-# Add CRAN repository and install R
-RUN wget -qO- https://cloud.r-project.org/bin/linux/debian/pubkey.gpg | gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" > /etc/apt/sources.list.d/cran.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends r-base
-
-# Install LaTeX and Inkscape
-RUN add-apt-repository ppa:inkscape.dev/stable -y && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+    ghostscript \
     texlive-latex-recommended \
     texlive-fonts-recommended \
     texlive-latex-extra \
@@ -34,47 +24,37 @@ RUN add-apt-repository ppa:inkscape.dev/stable -y && \
     texlive-luatex \
     inkscape
 
-# Install Quarto CLI
-RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.550/quarto-1.4.550-linux-amd64.deb && \
-    dpkg -i quarto-1.4.550-linux-amd64.deb && \
-    rm quarto-1.4.550-linux-amd64.deb
+# Install R and add CRAN repository
+RUN wget -qO- https://cloud.r-project.org/bin/linux/debian/pubkey.gpg | \
+    gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/debian/ bookworm-cran40/" > /etc/apt/sources.list.d/cran.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends r-base
 
-# Install TinyTeX via Quarto (for lean LaTeX)
+# Install Quarto CLI (Latest Version)
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/latest/download/quarto-linux-amd64.deb && \
+    dpkg -i quarto-linux-amd64.deb && \
+    rm quarto-linux-amd64.deb
+
+# Install TinyTeX via Quarto
 RUN quarto install tinytex
-RUN quarto install chromium 
+RUN quarto install chromium
 
-# Install core R packages for Quarto
-# RUN Rscript -e "install.packages(c('remotes', 'knitr', 'rmarkdown'), repos='https://cloud.r-project.org')"
+# Install required R packages in one step to reduce layers
+RUN Rscript -e 'install.packages(c("remotes", "devtools", "attempt", "dockerfiler"), repos="https://cloud.r-project.org")'
 
-# Copy and install project-specific R packages
-# COPY install_packages.R /home/gitpod/install_packages.R
-# RUN Rscript /home/gitpod/install_packages.R
-
-RUN R -e 'install.packages("remotes")'
-RUN R -e 'remotes::install_github("r-lib/remotes", ref = "6c8fdaa")'
-RUN R -e 'remotes::install_cran("attempt")'
-RUN R -e 'remotes::install_cran("remotes")'
-RUN R -e 'remotes::install_cran("dockerfiler")'
-RUN R -e 'remotes::install_cran("devtools")'
-
-# Create writable cache dirs and set permissions
-RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache && \
-    chown -R gitpod:gitpod /tmp/.quarto-cache /tmp/.deno-cache
-
-RUN mkdir -p /home/gitpod/.cache/deno && \
-    mkdir -p /home/gitpod/.cache/quarto/sass && \
-    mkdir -p /home/workspace/cs249r_book/public && \
-    chown -R gitpod:gitpod /home/gitpod/.cache
+# Create cache directories with correct permissions
+RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache \
+    /home/gitpod/.cache/deno \
+    /home/gitpod/.cache/quarto/sass \
+    /home/workspace/cs249r_book/public && \
+    chown -R gitpod:gitpod /tmp/.quarto-cache /tmp/.deno-cache /home/gitpod/.cache /home/workspace/cs249r_book/public
 
 # Final cleanup
 RUN apt-get clean && rm -rf /var/cache/apt/* /var/lib/apt/lists/* /tmp/*
 
 # Switch back to gitpod user
 USER gitpod
-
-# Logs and helpful flags
-RUN mkdir -p /home/gitpod/logs && \
-    echo "✅ Quarto dev environment installed" >> /home/gitpod/logs/myDockerlog.txt
 
 # Persist environment vars for shell
 RUN echo 'export QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache' >> /home/gitpod/.bashrc && \
