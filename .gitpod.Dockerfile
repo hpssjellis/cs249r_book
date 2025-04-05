@@ -40,6 +40,7 @@ RUN Rscript -e "source('/home/gitpod/install_packages.R')"
 
 # Optional logging folder
 RUN mkdir -p /home/gitpod/logs && \
+    mkdir -p /home/public && \
     touch /home/gitpod/logs/myDockerlog.txt && \
     echo 'Docker setup completed!' >> /home/gitpod/logs/myDockerlog.txt
 
