@@ -1,20 +1,21 @@
 image:
   file: .gitpod.Dockerfile
-  
+
 ports:
-- port: 8080  
-  visibility: public
-  onOpen: open-preview
+  - port: 8080
+    visibility: public
+    onOpen: open-browser
 
 tasks:
-  - init: quarto check             &&
-      quarto --version             &&
-      r --version                  &&
-      tex --version                &&
-      inkscape --version           &&
-      gs --version                 && 
-      quarto render --to html      &&
-      mv _book public            
+  - init: |
+      quarto check &&
+      quarto --version &&
+      R --version &&
+      tex --version &&
+      inkscape --version &&
+      gs --version &&
+      quarto render --to html &&
+      mv _book public
 
+  - command: apachectl -D FOREGROUND
 
-  - command:   apachectl start     
