@@ -13,7 +13,6 @@ tasks:
       R --version &&
       tex --version &&
       inkscape --version &&
-      gs --version &&
-
-  - command: apachectl -D FOREGROUND
+      gs --version 
+    command: apachectl -D FOREGROUND
 
