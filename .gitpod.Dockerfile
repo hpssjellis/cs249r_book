@@ -12,8 +12,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     build-essential \
     wget \
     r-base \
-    python3 \
-    python3-pip \
     ghostscript \
     software-properties-common \
     texlive-latex-recommended \
@@ -41,8 +39,8 @@ RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache \
 
 # Fix Quarto/deno cache permission issues by pre-creating cache directories
 RUN mkdir -p /home/gitpod/.cache/deno && \
+    mkdir -p /home/workspace/cs249r_book/public && \
     mkdir -p /home/gitpod/.cache/quarto/sass && \
-    mkdir -p /home/public && \
     chown -R gitpod:gitpod /home/gitpod/.cache
 
 # Clean up
