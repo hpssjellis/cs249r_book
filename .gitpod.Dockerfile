@@ -33,6 +33,14 @@ RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.550/qua
 # Install TinyTeX via Quarto
 RUN quarto install tinytex
 
+# Install core R packages for Quarto
+RUN Rscript -e "install.packages(c('remotes', 'knitr', 'rmarkdown'), repos='https://cloud.r-project.org')"
+
+# Copy and run book-specific R packages
+COPY install_packages.R /home/gitpod/install_packages.R
+RUN Rscript -e "source('/home/gitpod/install_packages.R')"
+
+
 # Create writable cache dirs and set permissions
 RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache \
     && chown -R gitpod:gitpod /tmp/.quarto-cache /tmp/.deno-cache
