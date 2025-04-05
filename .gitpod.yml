@@ -18,4 +18,4 @@ tasks:
       mv _book public            
 
 
-command:   apachectl start     
+  - command:   apachectl start     
