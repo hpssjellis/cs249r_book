@@ -14,8 +14,6 @@ tasks:
       tex --version &&
       inkscape --version &&
       gs --version &&
-      quarto render --to html &&
-      mv _book public
 
   - command: apachectl -D FOREGROUND
 
