@@ -1,0 +1,25 @@
+version: "1"
+tasks:
+  - name: "Check Installed Versions"
+    run: |
+      quarto check
+      quarto --version
+      R --version
+      tex --version
+      inkscape --version
+      gs --version
+
+  - name: "Setup Workspace"
+    run: |
+      mkdir -p /workspace/public
+      sudo chmod 777 /workspace/public
+      echo "🔍 Checking if '/usr/bin/Rscript' is in the PATH..."
+      which Rscript
+      echo "📦 Listing installed R packages..."
+      Rscript -e "installed.packages()"
+
+  - name: "Render Outputs"
+    run: |
+      echo "✨ To build HTML: quarto render --to html --output-dir public"
+      echo "🖨️  To build PDF:  quarto render --to titlepage-pdf"
+      echo "📉 To compress PDF: python3 ./scripts/quarto_publish/gs_compress_pdf.py"
