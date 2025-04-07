@@ -18,8 +18,6 @@ tasks:
       Rscript -e "install.packages('rmarkdown', repos='http://cran.us.r-project.org')"  # Installing rmarkdown explicitly
       Rscript install_packages.R  # Continue with custom R packages from install_packages.R
 
-
-
       echo "📦 Installing TinyTeX..."
       quarto install tinytex
 
@@ -30,10 +28,25 @@ tasks:
       tex --version
       inkscape --version
       gs --version
-      # quarto render --to html  --output-dir public
+
+      # Create the 'public' folder and set write permissions
+      echo "📂 Creating 'public' folder and setting write permissions..."
+      mkdir -p /workspace/public
+      sudo chmod 777 /workspace/public  # Giving full read/write/execute permissions to all users
+
+      # Check if Rscript is in the PATH
+      echo "🔍 Checking if '/usr/bin/Rscript' is in the PATH..."
+      which Rscript
+
+      # List installed R packages
+      echo "📦 Listing installed R packages..."
+      Rscript -e "installed.packages()"
+
+      # Optional: Render HTML to public folder (you can uncomment this later if you want)
+      # quarto render --to html --output-dir public
 
     command: |
-      echo "✨ To build HTML: quarto render --to html  --output-dir public"
+      echo "✨ To build HTML: quarto render --to html --output-dir public"
       echo "🖨️  To build PDF:  quarto render --to titlepage-pdf"
       echo "📉 To compress PDF: python3 ./scripts/quarto_publish/gs_compress_pdf.py"
 
@@ -41,4 +54,3 @@ ports:
   - port: 8080
     visibility: public
     onOpen: open-browser
-    
