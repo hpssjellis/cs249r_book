@@ -1,5 +1,5 @@
 image:
-  original: gitpod/workspace-full
+  file: gitpod/workspace-full
 
 tasks:
   - init: |
@@ -39,3 +39,4 @@ ports:
   - port: 8080
     visibility: public
     onOpen: open-browser
+    
