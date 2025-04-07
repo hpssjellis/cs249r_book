@@ -22,7 +22,7 @@ tasks:
       echo "📦 Installing TinyTeX..."
       quarto install tinytex
 
-  - init: |
+      echo "✅ Checking installed versions..."
       quarto check
       quarto --version
       R --version
@@ -31,9 +31,10 @@ tasks:
       gs --version
 
     command: |
-      echo "To build HTML: quarto render --to html"
-      echo "To build PDF:  quarto render --to titlepage-pdf"
-      echo "To compress PDF: python3 ./scripts/quarto_publish/gs_compress_pdf.py"
+      echo "✨ To build HTML: quarto render --to html --output-dir public"
+      echo " might need sudo the first time"
+      echo "🖨️  To build PDF:  quarto render --to titlepage-pdf"
+      echo "📉 To compress PDF: python3 ./scripts/quarto_publish/gs_compress_pdf.py"
 
 ports:
   - port: 8080
