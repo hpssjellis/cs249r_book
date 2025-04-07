@@ -1,4 +1,4 @@
-image:
+oimage:
   file: .gitpod.Dockerfile
 
 tasks:
@@ -8,7 +8,7 @@ tasks:
       tex --version       &&
       inkscape --version  &&
       gs --version 
-    command: apachectl -D FOREGROUND
+    command: echo " you run your own apachectl -D FOREGROUND"
     
 ports:
   - port: 8080
