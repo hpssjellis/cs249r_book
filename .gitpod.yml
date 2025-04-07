@@ -30,7 +30,7 @@ tasks:
       tex --version
       inkscape --version
       gs --version
-      quarto render --to html  --output-dir public
+      # quarto render --to html  --output-dir public
 
     command: |
       echo "✨ To build HTML: quarto render --to html  --output-dir public"
