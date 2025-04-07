@@ -1,4 +1,4 @@
-oimage:
+image:
   file: .gitpod.Dockerfile
 
 tasks:
