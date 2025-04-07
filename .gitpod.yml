@@ -30,6 +30,11 @@ tasks:
       inkscape --version
       gs --version
 
+    command: |
+      echo "✨ To build HTML: quarto render --to html  --output-dir public"
+      echo "🖨️  To build PDF:  quarto render --to titlepage-pdf"
+      echo "📉 To compress PDF: python3 ./scripts/quarto_publish/gs_compress_pdf.py"
+
 ports:
   - port: 8080
     visibility: public
