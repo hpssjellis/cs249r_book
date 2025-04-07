@@ -1,4 +1,5 @@
-# Base image
+
+
 FROM gitpod/workspace-full:latest
 
 # Use root for installation
@@ -8,52 +9,47 @@ USER root
 ENV QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache
 ENV DENO_DIR=/tmp/.deno-cache
 
-# Install system dependencies
+# Install build tools + Quarto + R + Python + LaTeX + Inkscape + Ghostscript
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    dirmngr \
-    gnupg \
-    ca-certificates \
-    software-properties-common \
-    libfontconfig1 \
-    libfreetype6 \
+    r-base \
     ghostscript \
+    software-properties-common \
     texlive-latex-recommended \
     texlive-fonts-recommended \
     texlive-latex-extra \
     texlive-pictures \
     texlive-luatex \
-    r-base \
-    inkscape
+    libfontconfig1 \
+    libfreetype6 \
+    && add-apt-repository ppa:inkscape.dev/stable -y \
+    && apt-get update \
+    && apt-get install -y inkscape
 
-
-
-# Install Quarto CLI (Latest Version)
-RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.21/quarto-1.7.21-linux-arm64.deb && \
-    dpkg -i quarto-linux-amd64.deb && \
-    rm quarto-linux-amd64.deb
+# Install Quarto CLI
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.550/quarto-1.4.550-linux-amd64.deb \
+    && dpkg -i quarto-1.4.550-linux-amd64.deb \
+    && rm quarto-1.4.550-linux-amd64.deb
 
 # Install TinyTeX via Quarto
 RUN quarto install tinytex
-RUN quarto install chromium
 
-# Install required R packages in one step to reduce layers
-# RUN Rscript -e 'install.packages(c("remotes", "devtools", "attempt", "dockerfiler"), repos="https://cloud.r-project.org")'
-# RUN install.packages("remotes")
-# RUN source("install_packages.R")
-
-# Create cache directories with correct permissions
+# Create writable cache dirs and set permissions
 RUN mkdir -p /tmp/.quarto-cache /tmp/.deno-cache \
-    /home/gitpod/.cache/deno \
-    /home/gitpod/.cache/quarto/sass \
-    /home/workspace/cs249r_book/public && \
-    chown -R gitpod:gitpod /tmp/.quarto-cache /tmp/.deno-cache /home/gitpod/.cache /home/workspace/cs249r_book/public
+    && chown -R gitpod:gitpod /tmp/.quarto-cache /tmp/.deno-cache
 
-# Final cleanup
+# Clean up
 RUN apt-get clean && rm -rf /var/cache/apt/* /var/lib/apt/lists/* /tmp/*
 
 # Switch back to gitpod user
 USER gitpod
 
-# Persist environment vars for shell
-RUN echo 'export QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache' >> /home/gitpod/.bashrc && \
-    echo 'export DENO_DIR=/tmp/.deno-cache' >> /home/gitpod/.bashrc
+# Create logs and confirm install
+RUN mkdir -p /home/gitpod/logs \
+    && touch /home/gitpod/logs/myDockerlog.txt \
+    && echo "✅ Quarto dev environment installed" >> /home/gitpod/logs/myDockerlog.txt
+
+# Add to .bashrc so it's always active
+RUN echo 'export QUARTO_USER_CACHE_DIR=/tmp/.quarto-cache' >> /home/gitpod/.bashrc \
+    && echo 'export DENO_DIR=/tmp/.deno-cache' >> /home/gitpod/.bashrc
+
+
