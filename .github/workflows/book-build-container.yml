@@ -1,0 +1,498 @@
+name: '📚 Book Build (Container)'
+
+# Concurrency disabled - allow unlimited parallel builds
+
+# This workflow uses pre-built containers with all dependencies installed
+# Matrix approach: 4 parallel jobs for maximum speed
+on:
+  workflow_dispatch:
+    inputs:
+      build_linux:
+        description: '🐧 Build on Linux'
+        required: false
+        default: true
+        type: boolean
+      build_windows:
+        description: '🪟 Build on Windows'
+        required: false
+        default: true
+        type: boolean
+      build_html:
+        description: '📄 Build HTML format'
+        required: false
+        default: true
+        type: boolean
+      build_pdf:
+        description: '📑 Build PDF format'
+        required: false
+        default: true
+        type: boolean
+      build_epub:
+        description: '📚 Build EPUB format'
+        required: false
+        default: true
+        type: boolean
+      target:
+        description: 'Target branch (dev/main)'
+        required: false
+        type: choice
+        default: 'dev'
+        options:
+          - dev
+          - main
+      container_registry:
+        description: 'Container registry (e.g., ghcr.io)'
+        required: false
+        type: string
+        default: 'ghcr.io'
+      container_tag:
+        description: 'Container tag (e.g., latest)'
+        required: false
+        type: string
+        default: 'latest'
+  workflow_call:
+    inputs:
+      build_linux:
+        required: false
+        type: boolean
+        default: true
+      build_windows:
+        required: false
+        type: boolean
+        default: true
+      build_html:
+        required: false
+        type: boolean
+        default: true
+      build_pdf:
+        required: false
+        type: boolean
+        default: true
+      build_epub:
+        required: false
+        type: boolean
+        default: true
+      target:
+        required: false
+        type: string
+        default: 'dev'
+      container_registry:
+        required: false
+        type: string
+        default: 'ghcr.io'
+      container_tag:
+        required: false
+        type: string
+        default: 'latest'
+    outputs:
+      build_success:
+        description: "Whether all builds completed successfully"
+        value: ${{ jobs.collect-outputs.outputs.build_success }}
+      linux_html_artifact:
+        description: "Linux HTML artifact name"
+        value: ${{ jobs.collect-outputs.outputs.linux_html_artifact }}
+      linux_pdf_artifact:
+        description: "Linux PDF artifact name"
+        value: ${{ jobs.collect-outputs.outputs.linux_pdf_artifact }}
+      windows_html_artifact:
+        description: "Windows HTML artifact name"
+        value: ${{ jobs.collect-outputs.outputs.windows_html_artifact }}
+      windows_pdf_artifact:
+        description: "Windows PDF artifact name"
+        value: ${{ jobs.collect-outputs.outputs.windows_pdf_artifact }}
+      linux_epub_artifact:
+        description: "Linux EPUB artifact name"
+        value: ${{ jobs.collect-outputs.outputs.linux_epub_artifact }}
+      windows_epub_artifact:
+        description: "Windows EPUB artifact name"
+        value: ${{ jobs.collect-outputs.outputs.windows_epub_artifact }}
+
+permissions:
+  contents: read
+  packages: read
+
+# =============================================================================
+# PATH CONFIGURATION - Uses GitHub Repository Variables (Settings > Variables)
+# =============================================================================
+# MLSysBook content lives under book/ to accommodate TinyTorch at root
+# Use ${{ vars.BOOK_ROOT }}, ${{ vars.BOOK_QUARTO }}, etc. in workflow steps
+# Variables: BOOK_ROOT, BOOK_DOCKER, BOOK_TOOLS, BOOK_QUARTO, BOOK_DEPS
+
+jobs:
+  build:
+    name: '${{ matrix.platform_emoji }} Build ${{ matrix.platform_name }} (${{ matrix.format_emoji }} ${{ matrix.format_name }})'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds
+          - platform: linux
+            platform_name: Linux
+            platform_emoji: '🐧'
+            runner: ubuntu-latest
+            format_name: HTML
+            format_emoji: '📄'
+            config: _quarto-html.yml
+            render_target: html
+            enabled: ${{ inputs.build_linux && inputs.build_html }}
+            artifact_name: ${{ inputs.target }}-html-linux
+            output_dir: _build/html
+          - platform: linux
+            platform_name: Linux
+            platform_emoji: '🐧'
+            runner: ubuntu-latest
+            format_name: PDF
+            format_emoji: '📑'
+            config: _quarto-pdf.yml
+            render_target: titlepage-pdf
+            enabled: ${{ inputs.build_linux && inputs.build_pdf }}
+            artifact_name: ${{ inputs.target }}-pdf-linux
+            output_dir: _build/pdf
+          # Windows builds
+          - platform: windows
+            platform_name: Windows
+            platform_emoji: '🪟'
+            runner: windows-latest
+            format_name: HTML
+            format_emoji: '📄'
+            config: _quarto-html.yml
+            render_target: html
+            enabled: ${{ inputs.build_windows && inputs.build_html }}
+            artifact_name: ${{ inputs.target }}-html-windows
+            output_dir: _build/html
+          - platform: windows
+            platform_name: Windows
+            platform_emoji: '🪟'
+            runner: windows-latest
+            format_name: PDF
+            format_emoji: '📑'
+            config: _quarto-pdf.yml
+            render_target: titlepage-pdf
+            enabled: ${{ inputs.build_windows && inputs.build_pdf }}
+            artifact_name: ${{ inputs.target }}-pdf-windows
+            output_dir: _build/pdf
+          # EPUB builds
+          - platform: linux
+            platform_name: Linux
+            platform_emoji: '🐧'
+            runner: ubuntu-latest
+            format_name: EPUB
+            format_emoji: '📚'
+            config: _quarto-epub.yml
+            render_target: epub
+            enabled: ${{ inputs.build_linux && inputs.build_epub }}
+            artifact_name: ${{ inputs.target }}-epub-linux
+            output_dir: _build/epub
+          - platform: windows
+            platform_name: Windows
+            platform_emoji: '🪟'
+            runner: windows-latest
+            format_name: EPUB
+            format_emoji: '📚'
+            config: _quarto-epub.yml
+            render_target: epub
+            enabled: ${{ inputs.build_windows && inputs.build_epub }}
+            artifact_name: ${{ inputs.target }}-epub-windows
+            output_dir: _build/epub
+
+    outputs:
+      platform: ${{ matrix.platform }}
+      format: ${{ matrix.format_name }}
+      artifact_name: ${{ matrix.artifact_name }}
+      output_dir: ${{ matrix.output_dir }}
+
+    # Only Linux runs in containers
+    container: ${{ matrix.platform == 'linux' && format('{0}/{1}/quarto-{2}:{3}', inputs.container_registry || 'ghcr.io', github.repository, matrix.platform, inputs.container_tag || 'latest') || null }}
+
+    env:
+      CONTAINER_IMAGE: ${{ format('{0}/{1}/quarto-{2}:{3}', inputs.container_registry || 'ghcr.io', github.repository, matrix.platform, inputs.container_tag || 'latest') }}
+      # Using vars.BOOK_DOCKER (repository variable) - works in all contexts
+      DOCKERFILE_PATH: ./${{ vars.BOOK_DOCKER }}/${{ matrix.platform }}/Dockerfile
+
+    steps:
+      - name: 🛑 Skip build
+        if: "!matrix.enabled"
+        run: echo "Build skipped because matrix.enabled is false"
+
+      - name: 📥 Checkout repository
+        if: matrix.enabled
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target }}
+          fetch-depth: 0
+
+      - name: 🔍 Debug build configuration
+        if: matrix.enabled
+        run: |
+          echo "🎯 Target branch: ${{ inputs.target }}"
+          echo "🐧 Build Linux: ${{ inputs.build_linux }}"
+          echo "🪟 Build Windows: ${{ inputs.build_windows }}"
+          echo "📄 Build HTML: ${{ inputs.build_html }}"
+          echo "📑 Build PDF: ${{ inputs.build_pdf }}"
+          echo "📚 Build EPUB: ${{ inputs.build_epub }}"
+          echo "🐳 Container registry: ${{ inputs.container_registry }}"
+          echo "🏷️ Container tag: ${{ inputs.container_tag }}"
+          echo "✅ Current matrix job enabled: ${{ matrix.enabled }}"
+
+      - name: 🔑 Log in to GitHub Container Registry
+        if: matrix.platform == 'windows' && matrix.enabled
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.container_registry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Pull Docker Image
+        if: matrix.platform == 'windows' && matrix.enabled
+        run: docker pull ${{ env.CONTAINER_IMAGE }}
+
+      - name: 🔨 Build ${{ matrix.format_name }} (Linux)
+        if: matrix.platform == 'linux' && matrix.enabled
+        working-directory: ${{ vars.BOOK_QUARTO }}
+        run: |
+          echo "🔨 Building ${{ matrix.format_name }} on Linux container..."
+          rm -f _quarto.yml
+          cp config/${{ matrix.config }} _quarto.yml
+          quarto render --to ${{ matrix.render_target }} --output-dir "${{ matrix.output_dir }}"
+          echo "✅ ${{ matrix.format_name }} build completed"
+
+      - name: 🔨 Build ${{ matrix.format_name }} (Windows)
+        if: matrix.platform == 'windows' && matrix.enabled
+        shell: pwsh
+        run: |
+          Write-Host "🔨 Building ${{ matrix.format_name }} on Windows container..."
+          docker run --rm -v "$($PWD.Path):C:\workspace" -w "C:\workspace\book\quarto" ${{ env.CONTAINER_IMAGE }} powershell -Command "
+            if (Test-Path '_quarto.yml') { Remove-Item '_quarto.yml' -Force }
+            Copy-Item 'config\${{ matrix.config }}' '_quarto.yml' -Force
+            quarto render --to ${{ matrix.render_target }} --output-dir '${{ matrix.output_dir }}'
+          "
+          Write-Host "✅ ${{ matrix.format_name }} build completed"
+
+      - name: 📉 Compress PDF (Linux)
+        if: matrix.platform == 'linux' && matrix.format_name == 'PDF' && matrix.enabled
+        working-directory: ${{ vars.BOOK_QUARTO }}/${{ matrix.output_dir }}
+        run: |
+          if [ -f "Machine-Learning-Systems.pdf" ]; then
+            echo "📉 Compressing PDF with professional compression tool..."
+            echo "🔍 DEBUG: PWD=$(pwd)"
+            echo "🔍 DEBUG: Checking for compress script:"
+            ls -la ../../publish/compress_pdf.py || echo "❌ Script not found at ../../publish/"
+
+            # Use relative path from current working directory (book/quarto/_build/pdf)
+            SCRIPT_PATH="../../publish/compress_pdf.py"
+            if [ -f "$SCRIPT_PATH" ]; then
+              echo "✅ Using script at: $SCRIPT_PATH"
+              python3 "$SCRIPT_PATH" \
+                --input "Machine-Learning-Systems.pdf" \
+                --output "compressed.pdf" \
+                --quality minimal \
+                --verbose
+            else
+              # Fallback to absolute path via github.workspace
+              SCRIPT_PATH="${{ github.workspace }}/${{ vars.BOOK_QUARTO }}/publish/compress_pdf.py"
+              echo "🔄 Trying fallback path: $SCRIPT_PATH"
+              python3 "$SCRIPT_PATH" \
+                --input "Machine-Learning-Systems.pdf" \
+                --output "compressed.pdf" \
+                --quality minimal \
+                --verbose
+            fi
+            mv compressed.pdf Machine-Learning-Systems.pdf
+            echo "✅ PDF compression completed"
+          else
+            echo "⚠️ PDF file not found for compression"
+          fi
+
+      - name: 📉 Compress PDF (Windows)
+        if: matrix.platform == 'windows' && matrix.format_name == 'PDF' && matrix.enabled
+        shell: pwsh
+        run: |
+          Write-Host "🔨 Compressing PDF on Windows container..."
+          docker run --rm -v "$($PWD.Path):C:\workspace" -w "C:\workspace\book\quarto\${{ matrix.output_dir }}" ${{ env.CONTAINER_IMAGE }} powershell -Command "
+            if (Test-Path 'Machine-Learning-Systems.pdf') {
+              Write-Host '📉 Compressing PDF with professional compression tool...'
+              Write-Host '🔍 DEBUG: Current directory:'
+              Get-Location
+              Write-Host '🔍 DEBUG: Windows environment info:'
+              Write-Host \"OS: $([System.Environment]::OSVersion.VersionString)\"
+              Write-Host \"Architecture: $([System.Environment]::Is64BitOperatingSystem)\"
+              Write-Host '🔍 DEBUG: Verifying Python and Pillow installation:'
+              `$py_version = (python --version 2>&1).Trim()
+              Write-Host \"  🐍 Python Version: `$py_version\"
+              `$py_path = (python -c 'import sys; print(sys.executable)').Trim()
+              Write-Host \"  🐍 Python Path: `$py_path\"
+              `$pillow_version = (python -c 'import PIL; print(PIL.__version__)').Trim()
+              Write-Host \"  ✅ Pillow Version: `$pillow_version\"
+              Write-Host '🔍 DEBUG: Checking for script at relative path:'
+              if (Test-Path '..\\..\\publish\\compress_pdf.py') {
+                Write-Host '✅ Found script at ..\\..\\publish\\compress_pdf.py'
+                python ..\..\publish\compress_pdf.py --input 'Machine-Learning-Systems.pdf' --output 'compressed.pdf' --quality minimal --verbose
+              } else {
+                Write-Host '🔄 Trying fallback path: C:\workspace\book\quarto\publish\compress_pdf.py'
+                python C:\workspace\book\quarto\publish\compress_pdf.py --input 'Machine-Learning-Systems.pdf' --output 'compressed.pdf' --quality minimal --verbose
+              }
+              if (Test-Path 'compressed.pdf') {
+                Move-Item -Force 'compressed.pdf' 'Machine-Learning-Systems.pdf'
+                Write-Host '✅ PDF compression completed'
+              }
+            } else {
+              Write-Warning '⚠️ Machine-Learning-Systems.pdf not found for compression.'
+            }
+          "
+          Write-Host "✅ PDF compression completed."
+
+      - name: 📚 Compress EPUB (Linux)
+        if: matrix.platform == 'linux' && matrix.format_name == 'EPUB' && matrix.enabled
+        working-directory: ${{ vars.BOOK_QUARTO }}/${{ matrix.output_dir }}
+        run: |
+          if [ -f "Machine-Learning-Systems.epub" ]; then
+            echo "📚 Compressing EPUB with optimized compression tool..."
+            echo "🔍 DEBUG: PWD=$(pwd)"
+            echo "🔍 DEBUG: Repository structure from current directory:"
+            ls -la ../../ | head -10
+            echo "🔍 DEBUG: Checking for compress script:"
+            ls -la ../../publish/compress_epub.py || echo "❌ Script not found at ../../publish/"
+            echo "🔍 DEBUG: Checking fallback path:"
+            ls -la "${{ github.workspace }}/${{ vars.BOOK_QUARTO }}/publish/compress_epub.py" || echo "❌ Script not found at github.workspace path"
+
+            # Use relative path from current working directory (book/quarto/_build/epub)
+            SCRIPT_PATH="../../publish/compress_epub.py"
+            if [ -f "$SCRIPT_PATH" ]; then
+              echo "✅ Using script at: $SCRIPT_PATH"
+              python3 "$SCRIPT_PATH" \
+                --input "Machine-Learning-Systems.epub" \
+                --output "compressed.epub" \
+                --verbose
+            else
+              # Fallback to absolute path via github.workspace
+              SCRIPT_PATH="${{ github.workspace }}/${{ vars.BOOK_QUARTO }}/publish/compress_epub.py"
+              echo "🔄 Trying fallback path: $SCRIPT_PATH"
+              python3 "$SCRIPT_PATH" \
+                --input "Machine-Learning-Systems.epub" \
+                --output "compressed.epub" \
+                --verbose
+            fi
+            mv compressed.epub Machine-Learning-Systems.epub
+            echo "✅ EPUB compression completed (using optimized defaults: quality=50, max-size=1000px)"
+          else
+            echo "⚠️ EPUB file not found for compression"
+          fi
+
+      - name: 📚 Compress EPUB (Windows)
+        if: matrix.platform == 'windows' && matrix.format_name == 'EPUB' && matrix.enabled
+        shell: pwsh
+        run: |
+          Write-Host "🔨 Compressing EPUB on Windows container..."
+          docker run --rm -v "$($PWD.Path):C:\workspace" -w "C:\workspace\book\quarto\${{ matrix.output_dir }}" ${{ env.CONTAINER_IMAGE }} powershell -Command "
+            if (Test-Path 'Machine-Learning-Systems.epub') {
+              Write-Host '📚 Compressing EPUB with optimized compression tool...'
+              Write-Host '🔍 DEBUG: Current directory:'
+              Get-Location
+              Write-Host '🔍 DEBUG: Windows environment info:'
+              Write-Host \"OS: $([System.Environment]::OSVersion.VersionString)\"
+              Write-Host \"Architecture: $([System.Environment]::Is64BitOperatingSystem)\"
+              Write-Host '🔍 DEBUG: Verifying Python and Pillow installation:'
+              `$py_version = (python --version 2>&1).Trim()
+              Write-Host \"  🐍 Python Version: `$py_version\"
+              `$py_path = (python -c 'import sys; print(sys.executable)').Trim()
+              Write-Host \"  🐍 Python Path: `$py_path\"
+              `$pillow_version = (python -c 'import PIL; print(PIL.__version__)').Trim()
+              Write-Host \"  ✅ Pillow Version: `$pillow_version\"
+              Write-Host '🔍 DEBUG: Checking for script at relative path:'
+              if (Test-Path '..\\..\\publish\\compress_epub.py') {
+                Write-Host '✅ Found script at ..\\..\\publish\\compress_epub.py'
+                python ..\..\publish\compress_epub.py --input 'Machine-Learning-Systems.epub' --output 'compressed.epub' --verbose
+              } else {
+                Write-Host '🔄 Trying fallback path: C:\workspace\book\quarto\publish\compress_epub.py'
+                python C:\workspace\book\quarto\publish\compress_epub.py --input 'Machine-Learning-Systems.epub' --output 'compressed.epub' --verbose
+              }
+              if (Test-Path 'compressed.epub') {
+                Move-Item -Force 'compressed.epub' 'Machine-Learning-Systems.epub'
+                Write-Host '✅ EPUB compression completed (using optimized defaults: quality=50, max-size=1000px)'
+              }
+            } else {
+              Write-Warning '⚠️ Machine-Learning-Systems.epub not found for compression.'
+            }
+          "
+          Write-Host "✅ EPUB compression completed."
+
+      - name: 📤 Upload artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.enabled
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ vars.BOOK_QUARTO }}/${{ matrix.output_dir }}
+
+  collect-outputs:
+    name: '📊 Collect Outputs'
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      build_success: ${{ steps.collect.outputs.build_success }}
+      linux_html_artifact: ${{ steps.collect.outputs.linux_html_artifact }}
+      linux_pdf_artifact: ${{ steps.collect.outputs.linux_pdf_artifact }}
+      linux_epub_artifact: ${{ steps.collect.outputs.linux_epub_artifact }}
+      windows_html_artifact: ${{ steps.collect.outputs.windows_html_artifact }}
+      windows_pdf_artifact: ${{ steps.collect.outputs.windows_pdf_artifact }}
+      windows_epub_artifact: ${{ steps.collect.outputs.windows_epub_artifact }}
+
+    steps:
+      - name: 📊 Collect results
+        id: collect
+        run: |
+          # Determine overall build success
+          if [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]; then
+            echo "build_success=true" >> $GITHUB_OUTPUT
+            BUILD_SUCCESS_MSG="✅ Success"
+          else
+            echo "build_success=false" >> $GITHUB_OUTPUT
+            BUILD_SUCCESS_MSG="❌ Failure"
+          fi
+
+          # 🔌 API-style artifact name generation (reliable and predictable)
+          TARGET="${{ inputs.target }}"
+          echo "🔌 Generating artifact names for target: $TARGET"
+
+          # Generate artifact names based on the same pattern used in matrix
+          # This creates a reliable "API contract" between workflows
+          if [[ "${{ inputs.build_linux && inputs.build_html }}" == "true" ]]; then
+            ARTIFACT_NAME="${TARGET}-html-linux"
+            echo "linux_html_artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            echo "📄 Linux HTML artifact: $ARTIFACT_NAME"
+          fi
+
+          if [[ "${{ inputs.build_linux && inputs.build_pdf }}" == "true" ]]; then
+            ARTIFACT_NAME="${TARGET}-pdf-linux"
+            echo "linux_pdf_artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            echo "📑 Linux PDF artifact: $ARTIFACT_NAME"
+          fi
+
+          if [[ "${{ inputs.build_linux && inputs.build_epub }}" == "true" ]]; then
+            ARTIFACT_NAME="${TARGET}-epub-linux"
+            echo "linux_epub_artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            echo "📚 Linux EPUB artifact: $ARTIFACT_NAME"
+          fi
+
+          if [[ "${{ inputs.build_windows && inputs.build_html }}" == "true" ]]; then
+            ARTIFACT_NAME="${TARGET}-html-windows"
+            echo "windows_html_artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            echo "📄 Windows HTML artifact: $ARTIFACT_NAME"
+          fi
+
+          if [[ "${{ inputs.build_windows && inputs.build_pdf }}" == "true" ]]; then
+            ARTIFACT_NAME="${TARGET}-pdf-windows"
+            echo "windows_pdf_artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            echo "📑 Windows PDF artifact: $ARTIFACT_NAME"
+          fi
+
+          if [[ "${{ inputs.build_windows && inputs.build_epub }}" == "true" ]]; then
+            ARTIFACT_NAME="${TARGET}-epub-windows"
+            echo "windows_epub_artifact=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            echo "📚 Windows EPUB artifact: $ARTIFACT_NAME"
+          fi
+
+          echo "✅ API contract established - Status: $BUILD_SUCCESS_MSG"

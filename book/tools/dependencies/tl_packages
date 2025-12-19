@@ -1,0 +1,15 @@
+# Auto-generated TeX Live package list
+
+# Collections:
+collection-basic
+collection-fontsextra
+collection-fontsrecommended
+collection-fontutils
+collection-latex
+collection-latexextra
+collection-latexrecommended
+collection-luatex
+collection-pictures
+
+# Note: Font packages like helvetic and psnfss are already included
+# in the collections above (collection-fontsrecommended and collection-latex)

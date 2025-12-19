@@ -1,0 +1,17 @@
+# =============================================================================
+# ANNOUNCEMENT BAR CONFIGURATION - PRODUCTION
+# =============================================================================
+# This file contains the announcement bar configuration for the production site.
+# It's included via metadata-files in _quarto-html.yml
+# =============================================================================
+
+website:
+  announcement:
+    icon: megaphone
+    dismissable: true
+    type: primary
+    position: below-navbar
+    content: |
+      🌟 **2025 Goal achieved:** 10,000 GitHub stars. Thank you! 🙏 [Celebrate on Dec 17 →](https://www.linkedin.com/events/7402387002232520704/)<br>
+      🎄 **Upcoming Release:** Tiny🔥Torch ML framework. Don't import it. [Build it →](https://mlsysbook.ai/tinytorch)<br>
+      🎉 **Coming 2026:** Textbook (Volume 1) published by The MIT Press. [See the news →](https://www.linkedin.com/posts/vijay-janapa-reddi-63a6a173_tinyml-tikz-ai-activity-7338324711145136128-6WU-?utm_source=share&utm_medium=member_desktop&rcm=ACoAAA-V7E4BcYtyZgLSeGhXC2t9jRSlmazfp-I)

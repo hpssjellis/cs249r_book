@@ -1,0 +1,83 @@
+name: '🔧 Infra Link Check'
+
+# =============================================================================
+# PATH CONFIGURATION NOTE
+# =============================================================================
+# MLSysBook content lives under book/ to accommodate TinyTorch at root
+# Input defaults use book/quarto/contents - update these if structure changes
+
+on:
+  workflow_call:
+    inputs:
+      path_pattern:
+        required: false
+        type: string
+        default: './book/quarto/contents/**/*.qmd'
+        description: 'File pattern to check links in. Example: "./book/quarto/contents/core/**/*.qmd"'
+      max_concurrency:
+        required: false
+        type: number
+        default: 10
+        description: 'Maximum concurrent link checks (1-20)'
+
+    outputs:
+      check-status:
+        description: "Link check status (success/failure)"
+        value: ${{ jobs.check-links.outputs.status }}
+      broken-links-count:
+        description: "Number of broken links found"
+        value: ${{ jobs.check-links.outputs.broken-count }}
+
+  workflow_dispatch:
+    inputs:
+      path_pattern:
+        required: false
+        type: string
+        default: './book/quarto/contents/**/*.qmd'
+        description: 'File pattern to check links in. Example: "./book/quarto/contents/core/**/*.qmd"'
+      max_concurrency:
+        required: false
+        type: number
+        default: 10
+        description: 'Maximum concurrent link checks (1-20)'
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.link-summary.outputs.status }}
+      broken-count: ${{ steps.link-summary.outputs.broken-count }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔗 Check Links
+        id: lychee
+        uses: lycheeverse/lychee-action@v2.0.2
+        with:
+          args: --verbose --no-progress --exclude-mail --max-concurrency ${{ inputs.max_concurrency || 10 }} --accept 200,403 --exclude-file book/config/linting/.lycheeignore ${{ inputs.path_pattern || './book/quarto/contents/**/*.qmd' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: 📊 Link Check Summary
+        id: link-summary
+        if: always()
+        run: |
+          # Determine status and broken link count
+          if [ "${{ steps.lychee.outcome }}" = "success" ]; then
+            STATUS="success"
+            BROKEN_COUNT="0"
+          else
+            STATUS="failure"
+            # Try to extract broken link count from lychee output (rough estimate)
+            BROKEN_COUNT="unknown"
+          fi
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "broken-count=$BROKEN_COUNT" >> $GITHUB_OUTPUT
+
+          echo "🔗 Link Check Status: $STATUS"
+          echo "📊 Broken Links: $BROKEN_COUNT"
+          echo "🎯 Pattern Checked: ${{ inputs.path_pattern || './contents/**/*.qmd' }}"
+          echo "⚡ Concurrency: ${{ inputs.max_concurrency || 10 }}"
